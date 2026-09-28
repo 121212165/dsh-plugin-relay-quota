@@ -1,0 +1,11 @@
+# Mounts relay-quota into a dsh profile. Add one row per relay you use.
+- insert:
+    - id: relay-quota
+      name: dsh-plugin-relay-quota
+      config:
+        enabled: true
+        providers: []
+        #  - name: my-relay
+        #    baseUrl: http://localhost:3002/v1
+        #    apiKeyEnv: RELAY_API_KEY
+        #    listModels: true
