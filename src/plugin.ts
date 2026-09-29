@@ -49,7 +49,8 @@ async function readProvider(provider: RelayProvider): Promise<string> {
   const key = process.env[provider.apiKeyEnv]?.trim();
   if (!key) return `${provider.name}: 环境变量 ${provider.apiKeyEnv} 未设置`;
   const signal = AbortSignal.timeout(15_000);
-  const base = provider.baseUrl.replace(/\/+$/, '');
+  // accept bases with or without the /v1 suffix; the billing surface lives under /v1
+  const base = provider.baseUrl.replace(/\/+$/, '').replace(/\/v1$/, '');
   let limitMajor: number | null = null;
   let usedMajor: number | null = null;
   let models: string[] | undefined;
@@ -85,14 +86,15 @@ async function readProvider(provider: RelayProvider): Promise<string> {
 export function apply(ctx: Context, config: Config): void {
   const log = ctx.logger('relay-quota');
   if (!config.enabled) return void log.info('disabled by config');
-  if (!config.providers.length) return void log.info('no providers configured');
+  // tools/commands stay registered even with zero providers: a missing
+  // configuration should answer "not configured", not make the tool vanish
 
   ctx.commands.register({
     name: 'quota',
     description: '查询所有已配置中转的余额与用量',
     handler: async () => {
       const lines = await Promise.all(config.providers.map(readProvider));
-      return { kind: 'success', text: lines.join('\n') };
+      return { kind: 'success', text: lines.length ? lines.join('\n') : '未配置任何中转。在 relay-quota.providers 里加一行。' };
     },
   });
 
