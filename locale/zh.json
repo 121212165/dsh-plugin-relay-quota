@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "中转额度",
+    "description": "查询任意 OpenAI 兼容中转的余额与用量，/quota 一目了然"
+  }
+}
