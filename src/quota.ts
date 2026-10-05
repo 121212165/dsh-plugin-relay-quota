@@ -64,3 +64,50 @@ export function renderReading(reading: QuotaReading): string {
   const state = reading.remainingMajor !== null && reading.remainingMajor <= 0 ? ' ❌ 已耗尽' : share > 0.9 ? ' ⚠ 低于10%' : '';
   return `${head}\n  ${renderBar(share)} ${Math.round(share * 100)}%${state}`;
 }
+
+/** The published contract (quota's summary.json pattern): the /quota command and
+ * quota_check tool write it when they run; the system-prompt section only ever
+ * reads this file, never the network — a section is evaluated every model step
+ * and must not turn into a polling loop against the relay. */
+export interface RelaySummary {
+  v: 1;
+  updatedAt: string;
+  providers: Array<{ name: string; limitMajor: number | null; usedMajor: number | null; remainingMajor: number | null }>;
+}
+
+export function composeSummary(readings: QuotaReading[], now: Date): RelaySummary {
+  return {
+    v: 1,
+    updatedAt: now.toISOString(),
+    providers: readings.map(({ provider, limitMajor, usedMajor, remainingMajor }) => ({ name: provider, limitMajor, usedMajor, remainingMajor })),
+  };
+}
+
+/** Older than this, the section goes quiet: a stale balance must not read as a live one. */
+export const SUMMARY_MAX_AGE_MS = 30 * 60_000;
+
+/** The one injected line when a relay runs low. Tolerant: missing file, junk,
+ * future stamp, or nothing below the line all render '' (no injection). */
+export function renderSectionAlert(content: unknown, now: Date, alertRatio: number): string {
+  if (typeof content !== 'object' || content === null) return '';
+  const value = content as Record<string, unknown>;
+  if (value.v !== 1) return '';
+  if (typeof value.updatedAt !== 'string' || !Number.isFinite(Date.parse(value.updatedAt))) return '';
+  if (now.getTime() - Date.parse(value.updatedAt) > SUMMARY_MAX_AGE_MS) return '';
+  if (!Array.isArray(value.providers) || !value.providers.length) return '';
+  const alerts: string[] = [];
+  for (const row of value.providers) {
+    if (typeof row !== 'object' || row === null) continue;
+    const entry = row as Record<string, unknown>;
+    if (typeof entry.name !== 'string' || !entry.name) continue;
+    if (typeof entry.remainingMajor !== 'number' || !Number.isFinite(entry.remainingMajor)) continue;
+    if (entry.remainingMajor <= 0) {
+      alerts.push(`${entry.name} 余额已耗尽`);
+      continue;
+    }
+    if (typeof entry.limitMajor === 'number' && Number.isFinite(entry.limitMajor) && entry.limitMajor > 0 && entry.remainingMajor / entry.limitMajor <= alertRatio) {
+      alerts.push(`${entry.name} 仅剩 $${entry.remainingMajor.toFixed(2)}（${Math.round((entry.remainingMajor / entry.limitMajor) * 100)}%）`);
+    }
+  }
+  return alerts.length ? `⚠ 中转余额告急：${alerts.join('；')}（/quota 详情）` : '';
+}
