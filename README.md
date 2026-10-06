@@ -1,5 +1,8 @@
 # dsh-plugin-relay-quota
 
+> 🧩 **dsh 插件家族**（22 件）：总目录 **[dsh-plugin-family](https://github.com/121212165/dsh-plugin-family)** ｜ 明星插件：**[ide-hub](https://github.com/121212165/dsh-plugin-ide-hub)** 跨 IDE 统一管理 · **[task-forge](https://github.com/121212165/dsh-plugin-task-forge)** 跨窗口无损交接 · **[quota](https://github.com/121212165/dsh-plugin-quota)** 实时用量仪表
+
+
 **EN** · Reads remaining quota and usage straight from any OpenAI-compatible relay's billing surface (new-api style) via `/quota` or the `quota_check` tool, handling the 1e8 unlimited sentinel and cent→currency conversion. · endpoint shapes verified with curl against a real relay · parsing and rendering under test · plugin itself not live-mounted.
 
 DeepSeek Harness (dsh) 插件：查询任意 OpenAI 兼容中转（new-api / one-api / OpenAI legacy billing 形状）的余额与用量。`/quota` 一次看所有已配置中转，agent 也能通过 `quota_check` 工具自己查。
