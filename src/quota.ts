@@ -22,10 +22,10 @@ export interface QuotaReading {
   usedMajor: number | null;
   remainingMajor: number | null;
   /** model ids the relay exposes (from /v1/models), when fetched */
-  models?: string[];
+  models?: string[] | undefined;
 }
 
-export function parseSubscription(provider: string, payload: unknown): { limitMajor: number | null } {
+export function parseSubscription(_provider: string, payload: unknown): { limitMajor: number | null } {
   if (typeof payload !== 'object' || payload === null) return { limitMajor: null };
   const hard = (payload as SubscriptionPayload).hard_limit_usd;
   const soft = (payload as SubscriptionPayload).soft_limit_usd;
@@ -36,7 +36,7 @@ export function parseSubscription(provider: string, payload: unknown): { limitMa
   return { limitMajor: limit !== null && limit >= 1e7 ? null : limit };
 }
 
-export function parseUsage(provider: string, payload: unknown): { usedMajor: number | null } {
+export function parseUsage(_provider: string, payload: unknown): { usedMajor: number | null } {
   if (typeof payload !== 'object' || payload === null) return { usedMajor: null };
   const totalUsage = (payload as UsagePayload).total_usage;
   if (typeof totalUsage !== 'number' || !Number.isFinite(totalUsage) || totalUsage < 0) return { usedMajor: null };
@@ -44,7 +44,7 @@ export function parseUsage(provider: string, payload: unknown): { usedMajor: num
   return { usedMajor: totalUsage / 100 };
 }
 
-export function composeReading(provider: string, limitMajor: number | null, usedMajor: number | null, models?: string[]): QuotaReading {
+export function composeReading(provider: string, limitMajor: number | null, usedMajor: number | null, models?: string[] | undefined): QuotaReading {
   const remainingMajor = limitMajor !== null && usedMajor !== null ? limitMajor - usedMajor : null;
   return { provider, limitMajor, usedMajor, remainingMajor, models };
 }
